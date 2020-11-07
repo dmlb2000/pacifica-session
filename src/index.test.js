@@ -1,7 +1,7 @@
-import { ExampleComponent } from '.'
+import SessionList from '.'
 
-describe('ExampleComponent', () => {
+describe('SessionList', () => {
   it('is truthy', () => {
-    expect(ExampleComponent).toBeTruthy()
+    expect(SessionList).toBeTruthy()
   })
 })

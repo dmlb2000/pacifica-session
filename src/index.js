@@ -1,129 +1,219 @@
-import React, { Component } from 'react'
-import PropTypes from 'prop-types'
-import Keycloak from 'keycloak-js'
-import { withStyles } from '@material-ui/core/styles'
-import Typography from '@material-ui/core/Typography'
-import AppBar from '@material-ui/core/AppBar'
-import Toolbar from '@material-ui/core/Toolbar'
-import Button from '@material-ui/core/Button'
-import Paper from '@material-ui/core/Paper'
-import Grid from '@material-ui/core/Grid'
+import React from 'react';
+import clsx from 'clsx';
+import { makeStyles, useTheme } from '@material-ui/core/styles';
+import Drawer from '@material-ui/core/Drawer';
+import AppBar from '@material-ui/core/AppBar';
+import Toolbar from '@material-ui/core/Toolbar';
+import List from '@material-ui/core/List';
+import CssBaseline from '@material-ui/core/CssBaseline';
+import Typography from '@material-ui/core/Typography';
+import Divider from '@material-ui/core/Divider';
+import IconButton from '@material-ui/core/IconButton';
+import MenuIcon from '@material-ui/icons/Menu';
+import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
+import ChevronRightIcon from '@material-ui/icons/ChevronRight';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
+import ListItemText from '@material-ui/core/ListItemText';
+import RefreshIcon from '@material-ui/icons/Refresh';
+import { getSessions } from './api';
+import FormListItemDialog from './createmodal';
+import ListItemInfoDialog from './infomodal';
+import DeleteListItemDialog from './deletemodal';
 
+const drawerWidth = 240;
 
-const styles = function styles(theme) {
-  return ({
-    root: {
-      flexGrow: 1,
+const useStyles = makeStyles((theme) => ({
+  root: {
+    display: 'flex',
+  },
+  appBar: {
+    zIndex: theme.zIndex.drawer + 1,
+    transition: theme.transitions.create(['width', 'margin'], {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.leavingScreen,
+    }),
+  },
+  appBarShift: {
+    marginLeft: drawerWidth,
+    width: `calc(100% - ${drawerWidth}px)`,
+    transition: theme.transitions.create(['width', 'margin'], {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+  },
+  menuButton: {
+    marginRight: 36,
+  },
+  hide: {
+    display: 'none',
+  },
+  drawer: {
+    width: drawerWidth,
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
+  },
+  drawerOpen: {
+    width: drawerWidth,
+    transition: theme.transitions.create('width', {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+  },
+  drawerClose: {
+    transition: theme.transitions.create('width', {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.leavingScreen,
+    }),
+    overflowX: 'hidden',
+    width: theme.spacing(7) + 1,
+    [theme.breakpoints.up('sm')]: {
+      width: theme.spacing(9) + 1,
     },
-    paper: {
-      padding: theme.spacing(2),
-      textAlign: 'center',
-      color: theme.palette.text.secondary,
-    },
-    title: {
-      marginRight: theme.spacing(2),
-    },
-    subtitle: {
-      flexGrow: 1,
-    },
-  });
-};
+  },
+  toolbar: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    padding: theme.spacing(0, 1),
+    // necessary for content to be below app bar
+    ...theme.mixins.toolbar,
+  },
+  content: {
+    flexGrow: 1,
+    padding: theme.spacing(3),
+  },
+}));
 
+export default function MiniDrawer({title, sessionApiUrl}) {
+  const classes = useStyles();
+  const theme = useTheme();
+  const [open, setOpen] = React.useState(false);
+  const [sessions, setSession] = React.useState([]);
+  const [loaded, setLoaded] = React.useState(false);
+  const [error, setError] = React.useState('');
 
-class SessionList extends Component {
-  static propTypes = {
-    sessionApiUrl: PropTypes.string.isRequired,
-    title: PropTypes.string.isRequired
-  }
+  const handleDrawerOpen = () => {
+    setOpen(true);
+  };
 
-  constructor(props) {
-    super(props)
-    this.state = {
-      loading: false,
-      sessionList: [],
-      keycloak: null,
-      authenticated: false,
-      userInfo: undefined,
-      error: undefined
+  const handleDrawerClose = () => {
+    setOpen(false);
+  };
+
+  const renderSessionList = () => {
+    if (sessions == undefined) {
+      return (
+        <Typography>There was an error: {error}</Typography>
+      );
     }
-    this.updateData = this.updateData.bind(this)
+    return sessions.map((session, index) => (
+      <ListItem key={session.uuid}>
+        <ListItemText primary={session.name+': ('+session.session+')'} />
+        <ListItemInfoDialog
+          sessionApiUrl={sessionApiUrl}
+          uuid={session.session}
+        />
+        <DeleteListItemDialog
+          sessionApiUrl={sessionApiUrl}
+          uuid={session.session}
+          name={session.name}
+          postCreateHook={updateSessions}
+        />
+      </ListItem>
+    ));
   }
-
-  componentDidMount() {
-    const keycloak = Keycloak({
-      "realm": "master",
-      "url": "https://localhost:8443/auth/",
-      "clientId": "react-public",
-    });
-    keycloak.init({onLoad: 'login-required'}).then(authenticated => {
-      keycloak.loadUserInfo().then(userInfo => {
-        this.setState({
-          userInfo: userInfo,
-          keycloak: keycloak,
-          authenticated: authenticated
-        })
-      });
-    })
-  }
-
-  updateData() {
-    const { sessionApiUrl } = this.props;
-    fetch(sessionApiUrl+'/login/keycloak', {
-      method: 'GET',
-      headers: {
-        'Authorization': 'Bearer ' + this.state.keycloak.token,
-        'Accept': 'application/json'
+  const updateSessions = () => {
+    getSessions(sessionApiUrl).then(
+      (result) => {
+        setSession(result);
+        setLoaded(true);
+      },
+      (error) => {
+        setError(error);
+        setSession([]);
+        setLoaded(true);
       }
-    })
-      .then(
-        (result) => {
-          console.log(result);
-          console.log(result.headers.get('Set-Cookie'));
-        },
-        (error) => {
-          console.log(error);
-          this.setState({
-            isLoaded: true,
-            sessionList: [],
-            error: error
-          });
-        }
-      )
-  }
-  render() {
-    const { classes, title, sessionApiUrl } = this.props;
-    if (this.state.keycloak) {
-      if (this.state.authenticated)
-        return (
-          <div className={classes.root}>
-            <AppBar position="static">
-              <Toolbar>
-                <Typography variant="h6" className={classes.title}>
-                  {title}
-                </Typography>
-                <Typography variant="h6" className={classes.subtitle}>
-                  {sessionApiUrl}
-                </Typography>
-                <Button color="inherit" onClick={this.updateData}>Refresh</Button>
-              </Toolbar>
-            </AppBar>
-            <Grid container justify="space-between" spacing={3}>
-              <Grid item>
-                <Paper className={classes.paper}>xs=6</Paper>
-              </Grid>
-              <Grid item>
-                <Paper className={classes.paper}>xs=6</Paper>
-              </Grid>
-            </Grid>
-          </div>
-        );
-      else
-        return (<div>Unable to authenticate!</div>);
+    )
+  };
+  React.useEffect(() => {
+    if (!loaded) {
+      updateSessions();
     }
-    return (
-      <div>Initializing Keycloak...</div>
-    );
-  }
-}
+  });
 
-export default withStyles(styles)(SessionList);
+  return (
+    <div className={classes.root}>
+      <CssBaseline />
+      <AppBar
+        position="fixed"
+        className={clsx(classes.appBar, {
+          [classes.appBarShift]: open,
+        })}
+      >
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            onClick={handleDrawerOpen}
+            edge="start"
+            className={clsx(classes.menuButton, {
+              [classes.hide]: open,
+            })}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" noWrap>
+            {title}
+          </Typography>
+        </Toolbar>
+      </AppBar>
+      <Drawer
+        variant="permanent"
+        className={clsx(classes.drawer, {
+          [classes.drawerOpen]: open,
+          [classes.drawerClose]: !open,
+        })}
+        classes={{
+          paper: clsx({
+            [classes.drawerOpen]: open,
+            [classes.drawerClose]: !open,
+          }),
+        }}
+      >
+        <div className={classes.toolbar}>
+          <Typography variant="subtitle1" noWrap>
+            {sessionApiUrl}
+          </Typography>
+          <IconButton onClick={handleDrawerClose}>
+            {theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+          </IconButton>
+        </div>
+        <Divider />
+        <List>
+          <ListItem 
+            button
+            key="Refresh"
+            onClick={updateSessions}
+          >
+            <ListItemIcon><RefreshIcon /></ListItemIcon>
+            <ListItemText primary="Refresh" />
+          </ListItem>
+          <FormListItemDialog
+            sessionApiUrl={sessionApiUrl}
+            postCreateHook={updateSessions}
+          />
+        </List>
+        <Divider />
+      </Drawer>
+      <main className={classes.content}>
+        <div className={classes.toolbar} />
+        {loaded ?
+        renderSessionList()
+        :
+        <Typography paragraph>Loading ...</Typography>
+        }
+      </main>
+    </div>
+  );
+}

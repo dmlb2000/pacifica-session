@@ -56,7 +56,7 @@ export default function ListItemInfoDialog({sessionApiUrl, uuid}) {
             </pre>
             <Typography variant="subtitle1">SSH Command Line Example</Typography>
             <pre>
-              scp -i upload_key.pem file {result.user_auth.username}@localhost:upload/
+              sftp -i upload_key.pem {result.user_auth.username}@localhost
             </pre>
           </DialogContentText>
         </DialogContent>

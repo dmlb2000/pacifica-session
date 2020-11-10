@@ -40,7 +40,7 @@ export default function ListItemInfoDialog({sessionApiUrl, uuid}) {
         <DialogContent>
           {error != null ?
             <DialogContentText>
-              There was an error: {error}
+              There was an error getting the result: {error}
             </DialogContentText>
             :
             <div/>
@@ -81,6 +81,7 @@ export default function ListItemInfoDialog({sessionApiUrl, uuid}) {
       <ListItemIcon>
         <Button
           onClick={handleClickOpen}
+          color="primary"
         >
           <InfoIcon />
         </Button>

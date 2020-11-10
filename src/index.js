@@ -110,11 +110,11 @@ export default function MiniDrawer({title, sessionApiUrl}) {
     }
     return sessions.map((session, index) => (
       <ListItem key={session.uuid}>
-        <ListItemText primary={session.name+': ('+session.session+')'} />
         <ListItemInfoDialog
           sessionApiUrl={sessionApiUrl}
           uuid={session.session}
         />
+        <ListItemText primary={session.name+': ('+session.session+')'} />
         <PublishListItemDialog
           sessionApiUrl={sessionApiUrl}
           session={session}
@@ -148,6 +148,20 @@ export default function MiniDrawer({title, sessionApiUrl}) {
     }
   });
 
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      var run_update = false;
+      sessions.map((session, index) => {
+        if (session.processing) {
+          run_update = true;
+        }
+      });
+      if (run_update) {
+        updateSessions();
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
   return (
     <div className={classes.root}>
       <CssBaseline />

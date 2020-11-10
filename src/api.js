@@ -55,7 +55,6 @@ export function commitSession(url, uuid) {
             url+'/session/'+uuid+'?commit=true',
             {
                 method: 'POST',
-                
                 headers: {
                     'Content-Type': 'application/json'
                 },

@@ -7,9 +7,12 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import PublishIcon from '@material-ui/icons/Publish';
+import DoneIcon from '@material-ui/icons/Done';
+import ErrorIcon from '@material-ui/icons/Error';
+import CircularProgress from '@material-ui/core/CircularProgress';
 import {commitSession} from './api';
 
-export default function PublishListItemDialog({sessionApiUrl, uuid, name, postCreateHook}) {
+export default function PublishListItemDialog({sessionApiUrl, session, postCreateHook}) {
   const [open, setOpen] = React.useState(false);
   const [result, setResult] = React.useState({});
   const [error, setError] = React.useState(null);
@@ -21,7 +24,7 @@ export default function PublishListItemDialog({sessionApiUrl, uuid, name, postCr
     setOpen(false);
   };
   const handlePublish = () => {
-    commitSession(sessionApiUrl, uuid).then(
+    commitSession(sessionApiUrl, session.session).then(
       (result) => {
         setResult(result);
         postCreateHook();
@@ -33,6 +36,9 @@ export default function PublishListItemDialog({sessionApiUrl, uuid, name, postCr
     );
   };
   const renderDialog = () => {
+    if (session.processing || session.complete) {
+      return (<div/>);
+    }
     return (
       <Dialog open={open} onClose={handleCancel} aria-labelledby="form-dialog-title">
         <DialogTitle id="form-dialog-title">Commit Session</DialogTitle>
@@ -45,7 +51,7 @@ export default function PublishListItemDialog({sessionApiUrl, uuid, name, postCr
             <div/>
           }
           <DialogContentText>
-            Are you sure you want to publish the data?
+            Are you sure you want to publish the data for {session.name} ({session.session})?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -60,14 +66,29 @@ export default function PublishListItemDialog({sessionApiUrl, uuid, name, postCr
     );
   }
 
+  const buttonOrIcon = () => {
+    if (session.complete && session.task_percent >= 100) {
+      return (<DoneIcon />);
+    }
+    if (session.complete && session.task_percent < 100) {
+      return (<ErrorIcon />);
+    }
+    if (session.processing) {
+      return (<CircularProgress value={session.task_percent} />);
+    }
+    return (
+      <Button
+        onClick={handleClickOpen}
+      >
+        <PublishIcon />
+      </Button>
+    );
+  }
+
   return (
     <div>
       <ListItemIcon>
-        <Button
-          onClick={handleClickOpen}
-        >
-          <PublishIcon />
-        </Button>
+        {buttonOrIcon()}
       </ListItemIcon>
       {renderDialog()}
     </div>

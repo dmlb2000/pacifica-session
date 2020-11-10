@@ -117,8 +117,7 @@ export default function MiniDrawer({title, sessionApiUrl}) {
         />
         <PublishListItemDialog
           sessionApiUrl={sessionApiUrl}
-          uuid={session.session}
-          name={session.name}
+          session={session}
           postCreateHook={updateSessions}
         />
         <DeleteListItemDialog

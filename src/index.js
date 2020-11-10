@@ -20,6 +20,7 @@ import { getSessions } from './api';
 import FormListItemDialog from './createmodal';
 import ListItemInfoDialog from './infomodal';
 import DeleteListItemDialog from './deletemodal';
+import PublishListItemDialog from './publishmodal';
 
 const drawerWidth = 240;
 
@@ -113,6 +114,12 @@ export default function MiniDrawer({title, sessionApiUrl}) {
         <ListItemInfoDialog
           sessionApiUrl={sessionApiUrl}
           uuid={session.session}
+        />
+        <PublishListItemDialog
+          sessionApiUrl={sessionApiUrl}
+          uuid={session.session}
+          name={session.name}
+          postCreateHook={updateSessions}
         />
         <DeleteListItemDialog
           sessionApiUrl={sessionApiUrl}

@@ -48,3 +48,25 @@ export function postSession(url, session_name) {
         )
     });
 }
+
+export function commitSession(url, uuid) {
+    return new Promise(function(result, error) {
+        fetch(
+            url+'/session/'+uuid+'?commit=true',
+            {
+                method: 'POST',
+                
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            }
+        ).then(
+            (rawres) => {
+                rawres.json()
+                .then(result, error)
+            },
+            error
+        )
+    });
+}

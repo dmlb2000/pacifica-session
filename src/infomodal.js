@@ -54,9 +54,16 @@ export default function ListItemInfoDialog({sessionApiUrl, uuid}) {
             <pre>
               {result.user_auth.private_key}
             </pre>
-            <Typography variant="subtitle1">SSH Command Line Example</Typography>
+            <Typography variant="subtitle1">SFTP Command Line Example</Typography>
             <pre>
               sftp -i upload_key.pem {result.user_auth.username}@localhost
+            </pre>
+            <Typography variant="subtitle1">LFTP Mirror Command Line Example</Typography>
+            <pre>
+              lftp \
+                -u {result.user_auth.username}, \
+                -e 'set sftp:connect-program "ssh -a -x -i private_key.pem"; mirror -eRv bin/ upload/bin; quit;' \
+                sftp://localhost
             </pre>
           </DialogContentText>
         </DialogContent>

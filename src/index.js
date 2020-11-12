@@ -91,6 +91,7 @@ export default function MiniDrawer({title, sessionApiUrl}) {
   const theme = useTheme();
   const [open, setOpen] = React.useState(false);
   const [sessions, setSession] = React.useState([]);
+  const [runUpdate, setUpdate] = React.useState(false);
   const [loaded, setLoaded] = React.useState(false);
   const [error, setError] = React.useState('');
 
@@ -133,6 +134,13 @@ export default function MiniDrawer({title, sessionApiUrl}) {
     getSessions(sessionApiUrl).then(
       (result) => {
         setSession(result);
+        var runUpdateAgain = false;
+        result.map((xsess, index) => {
+          if (xsess.processing) {
+            runUpdateAgain = true;
+          }
+        });
+        setUpdate(runUpdateAgain);
         setLoaded(true);
       },
       (error) => {
@@ -150,13 +158,7 @@ export default function MiniDrawer({title, sessionApiUrl}) {
 
   React.useEffect(() => {
     const interval = setInterval(() => {
-      var run_update = false;
-      sessions.map((session, index) => {
-        if (session.processing) {
-          run_update = true;
-        }
-      });
-      if (run_update) {
+      if (runUpdate) {
         updateSessions();
       }
     }, 500);
